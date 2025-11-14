@@ -1,0 +1,80 @@
+---
+title: "What ML Sees in Crystal Graphs"
+description: "How simple connectivity features relate to formation energy."
+date: 2025-11-13
+categories: [materials, graphs, interpretability]
+---
+
+> Can **topology alone** (without chemistry) tell us anything about formation energy?
+
+In a recent experiment, I converted Materials Project structures into **graphs**:
+atoms → nodes, neighbors within 4 Å → edges. From each graph I extracted:
+
+- `n_nodes`, `n_edges`
+- `avg_degree`, `std_degree`
+- `avg_clustering`, `density`
+
+Then I trained several regressors (RandomForest, GradientBoosting, etc.) on these 6 features to predict formation energy per atom.
+
+Below is a small **reproducible demo** with synthetic data (so you can run it anywhere). Replace the CSV path with your dataset later.
+
+## Mini Demo
+
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+# --- Synthetic sample mimicking graph stats (replace with your CSV) ---
+rng = np.random.default_rng(42)
+N = 400
+df = pd.DataFrame({
+    "n_nodes": rng.integers(8, 64, size=N),
+    "n_edges": rng.integers(20, 400, size=N),
+    "avg_degree": rng.uniform(2, 20, size=N),
+    "std_degree": rng.uniform(0.0, 4.0, size=N),
+    "avg_clustering": rng.uniform(0.0, 1.0, size=N),
+    "density": rng.uniform(0.05, 0.95, size=N),
+})
+
+# synthetic target with signal from avg_degree + density + some noise
+y = -0.05*df["avg_degree"].values - 0.3*df["density"].values + rng.normal(0, 0.25, size=N)
+
+X = df[["n_nodes","n_edges","avg_degree","std_degree","avg_clustering","density"]].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestRegressor(n_estimators=300, random_state=42)
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+mse = mean_squared_error(y_test, pred)
+rmse = float(np.sqrt(mse))
+mae = mean_absolute_error(y_test, pred)
+r2 = r2_score(y_test, pred)
+
+print(f"RMSE={rmse:.3f}, MAE={mae:.3f}, R2={r2:.3f}")
+
+# Feature importance bar
+importances = model.feature_importances_
+feat_names = ["n_nodes","n_edges","avg_degree","std_degree","avg_clustering","density"]
+order = np.argsort(importances)[::-1]
+
+plt.figure(figsize=(6,3.5))
+plt.bar([feat_names[i] for i in order], importances[order])
+plt.ylabel("Importance")
+plt.title("RandomForest Feature Importance")
+plt.xticks(rotation=30, ha="right")
+plt.tight_layout()
+plt.show()
+```
+
+### Interpretation
+
+- **avg_degree** often correlates with **coordination** and packing → lower energy when more connected.
+- **density** captures global connectivity (edges relative to all possible edges).
+- **std_degree** indicates heterogeneity: mixed local environments vs. uniform coordination.
+
+> Even without explicit **chemistry** or **distances**, topology contains weak but real signals about stability. The fun begins when we **add chemistry** and **distance-weighted edges** — stay tuned.

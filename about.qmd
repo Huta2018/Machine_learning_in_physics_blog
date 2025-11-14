@@ -1,0 +1,12 @@
+---
+title: "About"
+---
+
+I'm a computational physicist and R&D scientist working on **data-driven materials discovery** and **electrochemical sensors**.
+This blog is my open notebook — translating between equations, features, and materials.
+
+**Topics you'll see here:**
+- Physics-informed feature engineering
+- SHAP and interpretability for scientists
+- Graph features for crystal structures
+- Common pitfalls (correlation ≠ causation, extrapolation, leakage)

@@ -1,0 +1,12 @@
+---
+title: "ML in Physics — Blog"
+image: assets/cover.png
+---
+
+Welcome! I'm building bridges between **machine learning features** and **physical intuition**.
+
+- Short, focused posts (600–1000 words)
+- Clear code snippets you can run
+- Visuals that connect features to physics
+
+Start with the first post: [What ML Sees in Crystal Graphs](posts/01_graph_features_in_materials.qmd).

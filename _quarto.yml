@@ -1,0 +1,21 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "ML in Physics — Blog"
+  description: "Interpretable machine learning for physical scientists"
+  site-url: "https://<your-username>.github.io/ml-physics-blog"
+  navbar:
+    right:
+      - text: Posts
+        href: posts/index.qmd
+      - text: About
+        href: about.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-copy: true
+    page-layout: article
