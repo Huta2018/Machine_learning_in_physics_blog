@@ -1,0 +1,3 @@
+quarto render
+#thebn in _site folder
+open index.html

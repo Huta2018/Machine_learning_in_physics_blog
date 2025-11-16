@@ -1,6 +1,10 @@
 project:
   type: website
-  output-dir: _site
+  output-dir: docs
+
+#project:
+#  type: website
+#  output-dir: _site
 
 website:
   title: "ML in Physics — Blog"

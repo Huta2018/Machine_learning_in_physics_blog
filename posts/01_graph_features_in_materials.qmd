@@ -7,74 +7,91 @@ categories: [materials, graphs, interpretability]
 
 > Can **topology alone** (without chemistry) tell us anything about formation energy?
 
-In a recent experiment, I converted Materials Project structures into **graphs**:
-atoms → nodes, neighbors within 4 Å → edges. From each graph I extracted:
+Mostly all of the machine learning/ Deep learning algorithms used to predict materials properties like formation energy,
+band gap are trained on same set of dataset. On every models the dataset overlaps. Mostly the difference in these models
+are the way we extract features, mostly it combines atomic and geometric properties.
+In this short experiment, I tried to convert
+few structures (1000) from materials project datasets into **graphs**. These are the subset of data used to train **MEGNET** model. In this experiment atoms acts as node and edges are the constructed
+between neighbors within 4 Å distance from the node. 
+
+For example the graph structure for material with mp-1103373 (KSn2) looks like this:
+![Graph connectivity for mp-1103373](../assets/graph_mp-1103373.png)!
+
+ From each graph I extracted:
 
 - `n_nodes`, `n_edges`
 - `avg_degree`, `std_degree`
 - `avg_clustering`, `density`
 
-Then I trained several regressors (RandomForest, GradientBoosting, etc.) on these 6 features to predict formation energy per atom.
+The extracted features heatmap shows how simple graph - based structural features relate to formation energy (eV/atom)
+![Heatmap showing correlation between different graph features](../assets/clustering.png)!
 
-Below is a small **reproducible demo** with synthetic data (so you can run it anywhere). Replace the CSV path with your dataset later.
+Then I trained simple regressors (RandomForest, GradientBoosting, etc.) on these 6 features to predict formation energy per atom.
 
-## Mini Demo
+## Training simple RandomForestRegressor as an example
 
 ```{python}
+from pathlib import Path
+import joblib
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
 
-# --- Synthetic sample mimicking graph stats (replace with your CSV) ---
-rng = np.random.default_rng(42)
-N = 400
-df = pd.DataFrame({
-    "n_nodes": rng.integers(8, 64, size=N),
-    "n_edges": rng.integers(20, 400, size=N),
-    "avg_degree": rng.uniform(2, 20, size=N),
-    "std_degree": rng.uniform(0.0, 4.0, size=N),
-    "avg_clustering": rng.uniform(0.0, 1.0, size=N),
-    "density": rng.uniform(0.05, 0.95, size=N),
-})
+FEATURES_CSV = "../mp2019_graph_features.csv"
+MODEL_PATH = "../rf_graph_energy_model.joblib"
 
-# synthetic target with signal from avg_degree + density + some noise
-y = -0.05*df["avg_degree"].values - 0.3*df["density"].values + rng.normal(0, 0.25, size=N)
+def main():
+    #load feature dataset
+    df = pd.read_csv(FEATURES_CSV)
+    feature_cols = [
+        "n_nodes",
+        "n_edges",
+        "avg_degree",
+        "std_degree",
+        "avg_clustering",
+        "density",
+    ]
 
-X = df[["n_nodes","n_edges","avg_degree","std_degree","avg_clustering","density"]].values
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X = df[feature_cols].values
+    y = df["energy_pa"].values
 
-model = RandomForestRegressor(n_estimators=300, random_state=42)
-model.fit(X_train, y_train)
-pred = model.predict(X_test)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.1, random_state=42
+    )
 
-mse = mean_squared_error(y_test, pred)
-rmse = float(np.sqrt(mse))
-mae = mean_absolute_error(y_test, pred)
-r2 = r2_score(y_test, pred)
+    print(f"Training simple RandomForestRegressor")
 
-print(f"RMSE={rmse:.3f}, MAE={mae:.3f}, R2={r2:.3f}")
+    model = RandomForestRegressor(
+        n_estimators=300,
+        max_depth=None,
+        random_state=42,
+        n_jobs=-1,
+    )
+    model.fit(X_train, y_train)
 
-# Feature importance bar
-importances = model.feature_importances_
-feat_names = ["n_nodes","n_edges","avg_degree","std_degree","avg_clustering","density"]
-order = np.argsort(importances)[::-1]
+    y_pred = model.predict(X_test)
+    #get MAE
+    mae = mean_absolute_error(y_test, y_pred)
+    #Get R2
+    r2 = r2_score(y_test, y_pred)
 
-plt.figure(figsize=(6,3.5))
-plt.bar([feat_names[i] for i in order], importances[order])
-plt.ylabel("Importance")
-plt.title("RandomForest Feature Importance")
-plt.xticks(rotation=30, ha="right")
-plt.tight_layout()
-plt.show()
+    print("\n Performance (graph features to formation energy):")
+    print(f"  MAE: {mae:.4f} eV/atom")
+    print(f"  R² : {r2:.4f}")
+
+if __name__ == "__main__":
+    main()
 ```
+### simple Interpretation
+- No chemical information included
+- Only graph based features are used
+- small amount of dataset is used for the experiment
+- Without chemical information encoded the model cannot differentiate many important information such as metal vs semiconductor, 
+ionic vs covalent bonding, oxidation states, bond strengths, etc., which plays major role in prediction task
+- In this test example MAE of around 0.7 eV is completely expected and make sense
+- R2 indicates that nearly 21% of the variance in formation energy is captured with topology only, somehow interesting
 
-### Interpretation
-
-- **avg_degree** often correlates with **coordination** and packing → lower energy when more connected.
-- **density** captures global connectivity (edges relative to all possible edges).
-- **std_degree** indicates heterogeneity: mixed local environments vs. uniform coordination.
-
-> Even without explicit **chemistry** or **distances**, topology contains weak but real signals about stability. The fun begins when we **add chemistry** and **distance-weighted edges** — stay tuned.
+### **Conclusion**
+- **Even without explicit **chemistry**, topology contains weak but real signals about stability. The fun begins when we add chemistry and **distance-weighted edges** — stay tuned.

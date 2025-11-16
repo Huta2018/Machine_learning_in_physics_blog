@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://&lt;your-username&gt;.github.io/ml-physics-blog/about.html</loc>
+    <lastmod>2025-11-14T05:52:54.000Z</lastmod>
+  </url>
+  <url>
+    <loc>https://&lt;your-username&gt;.github.io/ml-physics-blog/posts/index.html</loc>
+    <lastmod>2025-11-14T05:52:54.000Z</lastmod>
+  </url>
+  <url>
+    <loc>https://&lt;your-username&gt;.github.io/ml-physics-blog/posts/01_graph_features_in_materials.html</loc>
+    <lastmod>2025-11-16T04:34:40.296Z</lastmod>
+  </url>
+  <url>
+    <loc>https://&lt;your-username&gt;.github.io/ml-physics-blog/index.html</loc>
+    <lastmod>2025-11-14T05:52:54.000Z</lastmod>
+  </url>
+</urlset>
